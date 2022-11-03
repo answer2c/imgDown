@@ -79,7 +79,7 @@ def write_cookie_to_driver():
 
 
 # 获取图片src列表
-def get_img_list():
+def get_src_list():
     set_dirname()
     # 等待滑动获取懒加载 TODO 替换成window.scroll
     print("请滑动加载所有图片")
@@ -100,7 +100,14 @@ def get_img_list():
         if len(desc_div_list):
             for i in desc_div_list:
                 img_tag = i.find_element_by_tag_name("img")
-                src = img_tag.get_attribute("data-src")
+                src = ""
+                try:
+                    src = img_tag.get_attribute("data-src")
+                except Exception:
+                    pass
+                if not src:
+                    src = img_tag.get_attribute("src")
+
                 if src:
                     if not src.startswith("http:") and not src.startswith("https:"):
                         # 没有带协议的
@@ -110,17 +117,24 @@ def get_img_list():
         else:
             print("没有获取到详情图!")
 
+        try:
+            video = driver.find_element_by_id("mainPicVideoEl").find_element_by_tag_name("video")
+            video_src = video.get_attribute("src")
+            result.append(video_src)
+        except Exception:
+            pass
+
     return result
 
 
 # 下载图片
-def down_img(imgs):
-    for img in imgs:
-        suffix = os.path.splitext(img)[-1]
-        new_file_name = dirname + str(imgs.index(img)) + suffix
+def down(source_list):
+    for resource in source_list:
+        suffix = os.path.splitext(resource)[-1]
+        new_file_name = dirname + str(source_list.index(resource)) + suffix
         try:
-            print("下载图片(" + img + "):", end="")
-            urllib.request.urlretrieve(img, new_file_name)
+            print("下载图片(" + resource + "):", end="")
+            urllib.request.urlretrieve(resource, new_file_name)
             print("done!")
         except Exception as e:
             print(e)
@@ -134,8 +148,8 @@ if __name__ == '__main__':
 
     try:
         initial()
-        img_list = get_img_list()
-        down_img(img_list)
+        src_list = get_src_list()
+        down(src_list)
     except Exception as e:
         print(e)
 
