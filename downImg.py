@@ -10,7 +10,7 @@ from selenium.webdriver.common.by import By
 import urllib.request
 
 cookieFilePath = ''
-dirname = ''
+dirname = '/'
 
 
 def initial():
@@ -43,7 +43,11 @@ def login():
 # 初始化本次图片保存的地址
 def set_dirname():
     global dirname
-    dirname = '/Users/yangbaochuan/Desktop/' + driver.title + '/'
+    if len(driver.title) == 0:
+        title = driver.find_element_by_class_name("tb-main-title").get_attribute("data-title")
+    else:
+        title = driver.title
+    dirname = dirname + title + '/'
     if not os.path.exists(dirname):
         os.mkdir(dirname)
 
@@ -80,21 +84,50 @@ def write_cookie_to_driver():
 
 # 获取图片src列表
 def get_src_list():
-    set_dirname()
     # 等待滑动获取懒加载 TODO 替换成window.scroll
     print("请滑动加载所有图片")
     time.sleep(5)
-    result = []
+    set_dirname()
+
+    result = {
+        "detail": [],  # 详情图
+        "main": [],  # 主图
+        # "sku": [],  # sku图
+    }
+
     if platform == 1:
+        # 详情图
         desc = driver.find_element_by_id("J_DivItemDesc")
-        img_tags = desc.find_elements_by_tag_name("img")
-        if len(img_tags):
-            for img in img_tags:
-                src = img.get_attribute('src')
-                if src:
-                    result.append(src)
-        else:
-            print("没有获取到详情图!")
+        if desc:
+            img_tags = desc.find_elements_by_tag_name("img")
+            if len(img_tags):
+                for img in img_tags:
+                    src = img.get_attribute('src')
+                    if not src:
+                        continue
+                    result["detail"].append(src)
+            else:
+                print("没有获取到详情图!")
+
+        # 主图
+        main_ul = driver.find_element_by_id("J_UlThumb")
+        if main_ul:
+            pic_list = main_ul.find_elements_by_class_name("tb-pic")
+            if len(pic_list):
+                for pic in pic_list:
+                    img = pic.find_element_by_tag_name("img")
+                    if not img:
+                        continue
+
+                    src = img.get_attribute("data-src")
+                    if not src:
+                        continue
+
+                    src = src.replace("50x50", "400x400")  # 替换尺寸
+                    result["main"].append(src)
+            else:
+                print("没有获取到主图")
+
     else:
         desc_div_list = driver.find_elements_by_class_name("descV8-singleImage")
         if len(desc_div_list):
@@ -109,18 +142,14 @@ def get_src_list():
                     src = img_tag.get_attribute("src")
 
                 if src:
-                    if not src.startswith("http:") and not src.startswith("https:"):
-                        # 没有带协议的
-                        head = "https:" if src.startswith("//") else "https://"
-                        src = head + src
-                    result.append(src)
+                    result["detail"].append(src)
         else:
             print("没有获取到详情图!")
 
         try:
             video = driver.find_element_by_id("mainPicVideoEl").find_element_by_tag_name("video")
             video_src = video.get_attribute("src")
-            result.append(video_src)
+            result["main"].append(video_src)
         except Exception:
             pass
 
@@ -129,16 +158,24 @@ def get_src_list():
 
 # 下载图片
 def down(source_list):
-    for resource in source_list:
-        suffix = os.path.splitext(resource)[-1]
-        new_file_name = dirname + str(source_list.index(resource)) + suffix
-        try:
-            print("下载图片(" + resource + "):", end="")
-            urllib.request.urlretrieve(resource, new_file_name)
-            print("done!")
-        except Exception as e:
-            print(e)
-            print("下载失败!")
+    for img_type in source_list:
+        for img in source_list[img_type]:
+            # 去掉get参数
+            img_src = img[:img.rfind("?")] if img.rfind("?") > 0 else img
+            # 没有带协议的加协议
+            if not img_src.startswith("http:") and not img_src.startswith("https:"):
+                head = "https:" if img.startswith("//") else "https://"
+                img_src = head + img_src
+
+            suffix = os.path.splitext(img_src)[-1]
+            new_file_name = dirname + img_type + "_" + str(source_list[img_type].index(img)) + suffix
+            try:
+                print("下载图片(" + img_src + "):", end="")
+                urllib.request.urlretrieve(img_src, new_file_name)
+                print("done!")
+            except Exception as e:
+                print(e)
+                print("下载失败!")
 
 
 if __name__ == '__main__':
