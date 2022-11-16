@@ -146,12 +146,26 @@ def get_src_list():
         else:
             print("没有获取到详情图!")
 
+        # 视频
         try:
             video = driver.find_element_by_id("mainPicVideoEl").find_element_by_tag_name("video")
             video_src = video.get_attribute("src")
             result["main"].append(video_src)
         except Exception:
             pass
+
+        # 主图
+        try:
+            main_imgs = driver.find_elements_by_xpath("//img[starts-with(@class, 'PicGallery--thumbnailPic')]")
+            for main_img in main_imgs:
+                src = main_img.get_attribute("src")
+                if not src:
+                    continue
+                if src.find("jpg") > 0:
+                    src = src[:src.find("jpg")+3]
+                result["main"].append(src)
+        except Exception as e:
+            print(e)
 
     return result
 
