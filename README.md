@@ -13,5 +13,5 @@ download imgs from product detail page of Taobao or Tmall.
 ## running procedure
 - download&install chromedriver
 - change the save directory in the code 
-- running in python3
+- run it using python3
  
