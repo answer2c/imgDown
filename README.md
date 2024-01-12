@@ -2,8 +2,8 @@
 下载tb或tm商详页的图片
 
 ## 运行
-- 下载chromedriver
-- 更换代码中保存路径
+- 下载安装chromedriver
+- 更换代码中图片保存路径、chromedriver安装路径
 - 使用python3运行
 
 
@@ -12,6 +12,6 @@ download imgs from product detail page of Taobao or Tmall.
 
 ## running procedure
 - download&install chromedriver
-- change the save directory in the code 
+- change the img saving path and chromedriver installation  path in the code 
 - run it using python3
  
